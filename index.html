@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Voyager AI — Always-On Agent Orchestration</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#080c14;--bg2:#0d1321;--bg3:#111827;--bg4:#1a2332;--bg5:#1f2b3d;
+  --tx:#e2e8f0;--tx2:#94a3b8;--tx3:#64748b;--tx4:#475569;
+  --bd:rgba(255,255,255,.06);--bd2:rgba(255,255,255,.12);
+  --cyan:#22d3ee;--cyan-d:rgba(34,211,238,.1);
+  --emerald:#34d399;--emerald-d:rgba(52,211,153,.08);
+  --amber:#fbbf24;--amber-d:rgba(251,191,36,.08);
+  --rose:#fb7185;--rose-d:rgba(251,113,133,.08);
+  --violet:#a78bfa;--violet-d:rgba(167,139,250,.08);
+  --orange:#fb923c;--orange-d:rgba(251,146,60,.08);
+  --blue:#60a5fa;--blue-d:rgba(96,165,250,.08);
+  --r:10px;--rl:14px;
+  --font:'DM Sans',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100vh}
+
+/* ═══ HEADER ═══ */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--bd);flex-wrap:wrap;gap:10px}
+.hdr-left{display:flex;align-items:center;gap:10px}
+.logo-m{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--cyan),var(--emerald));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#080c14}
+.logo-t{font-weight:700;font-size:15px}.logo-t span{color:var(--cyan)}
+.hdr-badge{font-size:9px;font-weight:700;padding:3px 10px;border-radius:10px;background:var(--cyan-d);color:var(--cyan);text-transform:uppercase;letter-spacing:.07em}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.mode-tog{display:flex;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;overflow:hidden}
+.mode-btn{padding:7px 16px;font-size:11px;font-weight:600;font-family:var(--font);cursor:pointer;background:none;border:none;color:var(--tx4);transition:all .2s}
+.mode-btn.on{background:var(--cyan-d);color:var(--cyan)}
+.status-p{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;padding:5px 12px;border-radius:12px;border:1px solid rgba(52,211,153,.2);background:var(--emerald-d);color:var(--emerald)}
+.ld{width:5px;height:5px;border-radius:50%;background:currentColor;animation:bl 1s infinite}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ═══ USE CASE BAR ═══ */
+.ucb{padding:12px 24px;border-bottom:1px solid var(--bd);display:none}
+.ucb.show{display:block;animation:sd .25s ease}
+@keyframes sd{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.ucb-label{font-size:10px;color:var(--tx4);text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-bottom:8px}
+.ucb-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.ucb-row::-webkit-scrollbar{height:2px}.ucb-row::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:1px}
+.uc-chip{flex-shrink:0;padding:7px 14px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:var(--font);color:var(--tx3)}
+.uc-chip:hover{border-color:var(--bd2);color:var(--tx2)}
+.uc-chip.on{border-color:var(--cyan);background:var(--cyan-d);color:var(--cyan)}
+
+/* ═══ LAYOUT ═══ */
+.layout{display:grid;grid-template-columns:1fr 400px;gap:0;min-height:calc(100vh - 100px)}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}}
+
+/* ═══ LEFT: DIAGRAM CANVAS ═══ */
+.diagram-pane{padding:20px 24px;position:relative;overflow-x:auto}
+.diagram-scroll{position:relative;width:640px;height:540px;margin:0 auto}
+
+/* SVG flow */
+#flow-svg{position:absolute;top:0;left:0;width:640px;height:540px;z-index:1}
+.fl{fill:none;stroke:var(--bd2);stroke-width:1.2;transition:stroke .5s,stroke-width .5s}
+.fl.lit{stroke:var(--cyan);stroke-width:1.8;filter:drop-shadow(0 0 4px rgba(34,211,238,.3))}
+.arrow-head{fill:var(--bd2);transition:fill .5s}
+.arrow-head.lit{fill:var(--cyan)}
+
+/* Nodes */
+.nd{position:absolute;z-index:10;transition:all .5s}
+
+.signal-nd{
+  width:90px;background:var(--bg3);border:1px solid var(--bd);border-radius:8px;
+  padding:8px;text-align:center;font-size:10px;color:var(--tx4);font-weight:500;
+  transition:all .4s;
+}
+.signal-nd.lit{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-d);box-shadow:0 0 12px var(--cyan-d)}
+.signal-nd .si{font-size:16px;display:block;margin-bottom:2px}
+
+.agent-nd{
+  width:150px;background:var(--bg3);border:1.5px solid var(--bd);border-radius:var(--rl);
+  padding:10px 12px;transition:all .5s;overflow:hidden;
+}
+.agent-nd.lit{border-color:var(--node-c,var(--cyan));box-shadow:0 0 24px color-mix(in srgb,var(--node-c,var(--cyan)) 20%,transparent)}
+.agent-nd .an-top{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.agent-nd .an-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:box-shadow .3s}
+.agent-nd.lit .an-dot{box-shadow:0 0 6px var(--node-c)}
+.agent-nd .an-nm{font-size:11px;font-weight:700}
+.agent-nd .an-aep{font-size:8px;font-weight:600;padding:1px 6px;border-radius:4px;background:var(--blue-d);color:var(--blue);margin-bottom:5px;display:inline-block}
+.agent-nd .an-desc{font-size:9px;color:var(--tx4);line-height:1.3;margin-bottom:5px}
+.agent-nd .an-tags{display:flex;flex-wrap:wrap;gap:3px}
+.an-tag{font-size:8px;font-weight:600;padding:1px 5px;border-radius:3px}
+.tag-i{background:var(--blue-d);color:var(--blue)}.tag-o{background:var(--emerald-d);color:var(--emerald)}.tag-t{background:var(--amber-d);color:var(--amber)}
+.agent-nd .an-cnt{position:absolute;top:6px;right:8px;font-family:var(--mono);font-size:9px;color:var(--tx4)}
+
+.hub-nd{
+  width:180px;background:var(--bg2);border:1.5px solid var(--bd2);border-radius:14px;
+  padding:12px 14px;text-align:center;transition:all .5s;
+}
+.hub-nd.lit{border-color:var(--cyan);box-shadow:0 0 30px var(--cyan-d)}
+.hub-nd .hub-t{font-size:12px;font-weight:800;color:var(--cyan);margin-bottom:3px}
+.hub-nd .hub-s{font-size:9px;color:var(--tx4);line-height:1.3}
+.hub-steps{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:8px}
+.hub-st{background:var(--bg3);border-radius:4px;padding:4px;font-size:8px;color:var(--tx4);font-weight:600;transition:all .3s}
+.hub-st.lit{background:var(--cyan-d);color:var(--cyan)}
+
+.aon-nd{
+  width:170px;background:linear-gradient(135deg,#0a1e30,#0a2820);
+  border:1.5px solid rgba(52,211,153,.15);border-radius:14px;padding:12px;text-align:center;transition:all .5s;
+}
+.aon-nd.lit{border-color:var(--emerald);box-shadow:0 0 30px var(--emerald-d)}
+.aon-nd .aon-t{font-size:12px;font-weight:800;color:var(--emerald);margin-bottom:2px}
+.aon-nd .aon-s{font-size:9px;color:rgba(255,255,255,.35);line-height:1.3}
+.aon-metrics{display:flex;gap:6px;margin-top:8px;justify-content:center}
+.aon-m{background:rgba(255,255,255,.04);border-radius:5px;padding:4px 8px}
+.aon-m .v{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--emerald)}
+.aon-m .l{font-size:7px;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.03em}
+
+.ch-nd{
+  width:70px;background:var(--bg3);border:1px solid var(--bd);border-radius:7px;
+  padding:6px 4px;text-align:center;font-size:8px;font-weight:700;color:var(--tx4);
+  text-transform:uppercase;letter-spacing:.03em;transition:all .4s;
+}
+.ch-nd.lit{border-color:var(--emerald);color:var(--emerald);background:var(--emerald-d)}
+.ch-nd .ci{font-size:14px;display:block;margin-bottom:1px}
+
+/* ═══ RIGHT: DETAIL PANEL ═══ */
+.detail-pane{border-left:1px solid var(--bd);background:var(--bg2);display:flex;flex-direction:column;overflow:hidden}
+@media(max-width:1000px){.detail-pane{border-left:none;border-top:1px solid var(--bd)}}
+
+.dp-header{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.dp-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px}
+.dp-title .dot{width:5px;height:5px;border-radius:50%}
+.dp-tabs{display:flex;gap:2px;background:var(--bg3);border-radius:6px;padding:2px;margin:0 18px;margin-top:10px}
+.dp-tab{flex:1;padding:6px 8px;border-radius:5px;border:none;cursor:pointer;font-size:10px;font-weight:600;font-family:var(--font);background:transparent;color:var(--tx4);transition:all .2s;text-align:center}
+.dp-tab.on{background:var(--bg);color:var(--tx)}
+
+.dp-body{flex:1;overflow-y:auto;padding:14px 18px}
+.dp-body::-webkit-scrollbar{width:3px}.dp-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.05);border-radius:2px}
+
+/* Agent execution log */
+.step-row{display:flex;gap:10px;padding:12px 0;border-bottom:1px solid var(--bd);transition:opacity .4s}
+.step-row.pending{opacity:.3}
+.step-row.running{opacity:1}
+.step-row.done{opacity:1}
+.sr-icon{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px;transition:background .3s}
+.sr-icon.pending{background:var(--bg3)}
+.sr-icon.running{background:var(--amber-d);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 rgba(251,191,36,.1)}50%{box-shadow:0 0 12px rgba(251,191,36,.2)}}
+.sr-icon.done{background:var(--emerald-d)}
+.sr-body{flex:1;min-width:0}
+.sr-head{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px}
+.sr-title{font-weight:700;font-size:12px;color:var(--tx)}
+.sr-badge{font-size:9px;font-weight:700;padding:1px 7px;border-radius:8px;letter-spacing:.03em}
+.sr-aep{font-size:9px;font-weight:600;padding:1px 7px;border-radius:5px;background:#0c4a6e;color:#7dd3fc}
+.sr-desc{font-size:11px;color:var(--tx3);line-height:1.5;margin-bottom:6px}
+.sr-data{background:var(--bg3);border-radius:7px;padding:8px 10px;font-family:var(--mono);font-size:9px;line-height:1.7;color:var(--emerald)}
+.sr-data .k{color:var(--tx4)}
+.sr-status{flex-shrink:0;font-size:11px;font-weight:700;margin-top:4px}
+.sr-status.pending{color:var(--tx4)}.sr-status.running{color:var(--amber)}.sr-status.done{color:var(--emerald)}
+
+/* AEP Data view */
+.aep-block{margin-bottom:14px}
+.aep-block-head{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.aep-block-dot{width:7px;height:7px;border-radius:50%}
+.aep-block-name{font-size:11px;font-weight:700}
+.aep-block-data{background:var(--bg3);border-radius:7px;padding:8px 10px;font-family:var(--mono);font-size:9px;line-height:1.8;color:var(--tx3)}
+.aep-block-data .ak{opacity:.6}
+
+/* Step progress */
+.step-progress{display:flex;align-items:center;justify-content:center;gap:4px;padding:10px 18px;border-bottom:1px solid var(--bd)}
+.sp-dot{width:8px;height:8px;border-radius:50%;background:var(--bg3);border:1.5px solid var(--bd);transition:all .3s}
+.sp-dot.done{background:var(--emerald);border-color:var(--emerald)}
+.sp-dot.cur{border-color:var(--amber);box-shadow:0 0 8px var(--amber-d);animation:spPulse .8s infinite}
+@keyframes spPulse{0%,100%{box-shadow:0 0 8px var(--amber-d)}50%{box-shadow:0 0 14px rgba(251,191,36,.2)}}
+.sp-line{width:16px;height:1.5px;background:var(--bd);transition:background .3s}
+.sp-line.done{background:var(--emerald)}
+
+/* Timer */
+.timer{font-family:var(--mono);font-size:10px;color:var(--tx4)}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div class="logo-m">V</div>
+    <div class="logo-t">Voyager <span>AI</span></div>
+    <div class="hdr-badge">Always-on orchestration</div>
+  </div>
+  <div class="hdr-right">
+    <div class="mode-tog">
+      <button class="mode-btn on" id="btn-auto" onclick="setMode('auto')">Autonomous</button>
+      <button class="mode-btn" id="btn-uc" onclick="setMode('uc')">Use case</button>
+    </div>
+    <div class="status-p" id="stat"><div class="ld"></div><span>Running</span></div>
+  </div>
+</div>
+
+<div class="ucb" id="ucb">
+  <div class="ucb-label">Select a use case to watch the full agent sequence</div>
+  <div class="ucb-row" id="uc-row"></div>
+</div>
+
+<div class="layout">
+  <!-- ═══ LEFT: DIAGRAM ═══ -->
+  <div class="diagram-pane">
+    <div class="diagram-scroll" id="dscroll">
+      <svg id="flow-svg" width="640" height="540" viewBox="0 0 640 540">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 4 L0 8 Z" class="arrow-head"/>
+          </marker>
+          <marker id="ah-lit" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L10 4 L0 8 Z" fill="#22d3ee"/>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT: DETAIL ═══ -->
+  <div class="detail-pane">
+    <div class="dp-header">
+      <div class="dp-title"><div class="dot" style="background:var(--amber)"></div>Agent execution log</div>
+      <div class="timer" id="timer">0ms</div>
+    </div>
+    <div class="step-progress" id="step-prog"></div>
+    <div class="dp-tabs">
+      <button class="dp-tab on" id="tab-agents" onclick="setTab('agents')">Agent flow</button>
+      <button class="dp-tab" id="tab-aep" onclick="setTab('aep')">AEP data</button>
+    </div>
+    <div class="dp-body" id="dp-body"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   AGENT & USE CASE DEFINITIONS
+   ═══════════════════════════════════════════ */
+const AGENTS=[
+  {id:'behavioral',name:'Behavioral signal',color:'#22d3ee',dim:'rgba(34,211,238,.1)',aep:'Edge Network + Streaming',
+   desc:'Real-time clickstream, scroll, dwell time',inTag:'Event stream',outTag:'Engagement score',trigTag:'Score threshold'},
+  {id:'intent',name:'Intent detection',color:'#34d399',dim:'rgba(52,211,153,.1)',aep:'Real-Time CDP',
+   desc:'Search query, NLP, page sequences',inTag:'Query + path',outTag:'Intent label',trigTag:'Intent shift'},
+  {id:'segment',name:'Segment qualifier',color:'#fb923c',dim:'rgba(251,146,60,.1)',aep:'Segmentation Service',
+   desc:'Audience rules, propensity, LTV tiers',inTag:'Unified profile',outTag:'Segment IDs',trigTag:'Seg entry/exit'},
+  {id:'journey',name:'Journey orchestrator',color:'#fb7185',dim:'rgba(251,113,133,.1)',aep:'Journey Optimizer',
+   desc:'Lifecycle mapping, next-best-action',inTag:'Journey state',outTag:'Action + timing',trigTag:'Milestone'},
+  {id:'content',name:'Content decisioning',color:'#a78bfa',dim:'rgba(167,139,250,.1)',aep:'Offer Decisioning + AJO',
+   desc:'Creative selection, offer ranking',inTag:'Context + pool',outTag:'Ranked content',trigTag:'Personalization call'},
+  {id:'channel',name:'Channel optimizer',color:'#fbbf24',dim:'rgba(251,191,36,.1)',aep:'Destinations + Activation',
+   desc:'Channel rank, freq cap, send-time',inTag:'Prefs + caps',outTag:'Channel + time',trigTag:'Activation req'},
+];
+
+const SOURCES=[{id:'src-web',label:'Web events',icon:'&#9672;'},{id:'src-crm',label:'CRM / CDP',icon:'&#9670;'},{id:'src-txn',label:'Transactions',icon:'&#9654;'}];
+const CHANNELS=[{id:'ch-email',label:'Email',icon:'&#9993;'},{id:'ch-push',label:'Push',icon:'&#128276;'},{id:'ch-web',label:'Web',icon:'&#127760;'},{id:'ch-paid',label:'Paid',icon:'&#128200;'},{id:'ch-sms',label:'SMS',icon:'&#128172;'},{id:'ch-app',label:'In-app',icon:'&#128241;'}];
+
+const USE_CASES=[
+  {id:'cart',label:'&#128722; Cart abandonment',
+   profile:{name:'Sarah Chen',id:'USR-4821',tier:'Gold member',ltv:'High',churnRisk:'Medium',lastActive:'2 hours ago'},
+   steps:[
+     {agent:'behavioral',aepModule:'Edge Network',icon:'&#128225;',title:'Disruption signal detected',
+      description:'Cart-add event fired 2 hours ago but no checkout. AEP Edge Network captures the idle session signal and triggers the Behavioral Signal Agent. Session dwell time on pricing page was 4m 22s before exit.',
+      aepData:{event:'cart.abandoned',cartValue:'$247.00',idleTime:'7,200s',sessionPages:8,lastPage:'/checkout',source:'WebSDK'}},
+     {agent:'intent',aepModule:'Real-Time CDP',icon:'&#128269;',title:'Purchase intent classified',
+      description:'Intent Detection Agent queries RT-CDP. Sarah visited 3 comparison pages, used the price calculator, and viewed shipping options — strong decision-stage signals. Confidence: 0.91.',
+      aepData:{intentLabel:'decision-abandoned',confidence:0.91,topicVector:'electronics > headphones',comparisonsViewed:3,calculatorUsed:true}},
+     {agent:'segment',aepModule:'Segmentation Service',icon:'&#128101;',title:'High-value segment qualified',
+      description:'Segment Agent evaluates Sarah against audience rules. Gold member + cart value > $200 + high LTV qualifies her for the "Priority Recovery" segment with elevated compensation rules.',
+      aepData:{segmentsEntered:['priority-recovery','gold-cart-abandon'],ltvTier:'Gold',cartThreshold:'exceeded ($247 > $200)',propensityToConvert:0.73}},
+     {agent:'journey',aepModule:'Journey Optimizer',icon:'&#128640;',title:'Recovery journey activated',
+      description:'Journey Orchestrator maps Sarah to the cart recovery canvas. Gold tier = accelerated timing (1h vs standard 4h). Next-best-action: send recovery notification with personalized incentive.',
+      aepData:{journeyId:'cart-recovery-gold-v3',step:'1 of 3',timing:'immediate (Gold override)',nextAction:'push-notification',escalation:'email at +4h if no response'}},
+     {agent:'content',aepModule:'Offer Decisioning + AJO',icon:'&#127912;',title:'Personalized offer composed',
+      description:'Content Agent assembles Sarah\'s recovery message. Offer Decisioning selects 10% discount (optimal for Gold tier, +23% predicted lift). Tone: premium-empathetic. CTA: one-tap checkout.',
+      aepData:{offer:'10% off cart ($24.70 saving)',creative:'premium-recovery-v2',tone:'priority-empathetic',cta:'one-tap-checkout',predictedLift:'+23% vs control'}},
+     {agent:'channel',aepModule:'Destinations + Activation',icon:'&#128232;',title:'Multi-channel activation fired',
+      description:'Channel Optimizer selects app push as primary (0.81 open probability) with email fallback at +4h. Frequency cap check: clear. Send-time: immediate (within user\'s active window).',
+      aepData:{primaryChannel:'app-push',fallback:'email at +4h',pushProbability:0.81,emailProbability:0.63,frequencyCap:'clear',deliveredAt:'14:02:38 UTC'}},
+   ]},
+  {id:'churn',label:'&#9888;&#65039; Churn prevention',
+   profile:{name:'Marcus Rivera',id:'USR-7392',tier:'Platinum member',ltv:'Very High',churnRisk:'Critical (0.87)',lastActive:'14 days ago'},
+   steps:[
+     {agent:'behavioral',aepModule:'Edge Network',icon:'&#128225;',title:'Dormancy signal detected',
+      description:'Behavioral Agent flags 14-day inactivity for a previously daily-active Platinum user. Engagement score plummeted from 92 to 23. Anomaly detection triggers immediate alert.',
+      aepData:{event:'engagement.anomaly',previousScore:92,currentScore:23,dormancyDays:14,lastSession:'2025-03-17',alertLevel:'CRITICAL'}},
+     {agent:'segment',aepModule:'Segmentation Service',icon:'&#128101;',title:'Churn risk segment entered',
+      description:'Segment Agent re-evaluates Marcus. Churn propensity model outputs 0.87 — exceeds critical threshold (0.7). Combined with Platinum tier and $12,400 annual LTV, he enters "VIP at-risk" segment.',
+      aepData:{churnPropensity:0.87,threshold:0.7,segmentsEntered:['vip-at-risk','platinum-dormant'],annualLTV:'$12,400',riskFactors:'14d dormancy + support ticket unresolved'}},
+     {agent:'journey',aepModule:'Journey Optimizer',icon:'&#128640;',title:'Retention journey triggered',
+      description:'Journey Orchestrator activates the Platinum retention flow. Marcus\'s open support ticket (unresolved billing query) identified as probable churn cause. Next-best-action: personal outreach + resolution.',
+      aepData:{journeyId:'retention-platinum-v4',step:'1 of 5',rootCause:'support-ticket-#4821 (billing)',nextAction:'personal-email + callback offer',escalation:'account manager call at +48h'}},
+     {agent:'content',aepModule:'Offer Decisioning + AJO',icon:'&#127912;',title:'Win-back offer assembled',
+      description:'Content Agent selects: personal apology from account team + 20% renewal discount + 3-month loyalty bonus. Offer Decisioning predicts 67% save rate for this combination.',
+      aepData:{offer:'20% renewal discount + 5,000 bonus points',creative:'platinum-winback-personal-v2',tone:'personal-apologetic',predictedSaveRate:'67%',includesCallback:true}},
+     {agent:'channel',aepModule:'Destinations + Activation',icon:'&#128232;',title:'Coordinated outreach launched',
+      description:'Channel Optimizer activates email (personal from account manager) + SMS (short "we miss you" with callback link). Frequency caps overridden by retention-critical flag. All channels fire simultaneously.',
+      aepData:{channels:['email (personal)','SMS','in-app banner'],frequencyOverride:'retention-critical',emailSender:'Account manager (personal)',smsContent:'Short winback + callback CTA',deliveredAt:'09:15:00 UTC (user timezone)'}},
+   ]},
+  {id:'xsell',label:'&#127919; Cross-sell opportunity',
+   profile:{name:'Aisha Patel',id:'USR-5183',tier:'Silver member',ltv:'Medium-High',churnRisk:'Low',lastActive:'Now (on-site)'},
+   steps:[
+     {agent:'intent',aepModule:'Real-Time CDP',icon:'&#128269;',title:'Cross-sell intent detected',
+      description:'Intent Agent detects Aisha browsing complementary category (accessories) after purchasing a laptop 3 days ago. 4 product comparison pages in 6 minutes = strong consideration signal.',
+      aepData:{intentLabel:'consideration (cross-sell)',confidence:0.88,primaryPurchase:'Laptop Pro 15" (3 days ago)',browsingCategory:'accessories > cases + docks',comparisonPages:4,sessionDuration:'6m 12s'}},
+     {agent:'segment',aepModule:'Segmentation Service',icon:'&#128101;',title:'Cross-sell audience qualified',
+      description:'Segment Agent confirms Aisha qualifies: recent high-value purchaser + browsing complementary category + Silver tier (eligible for bundle pricing).',
+      aepData:{segmentsEntered:['recent-purchaser-xsell','laptop-accessories-intent'],bundleEligible:true,recentPurchaseValue:'$1,849',daysSincePurchase:3}},
+     {agent:'content',aepModule:'Offer Decisioning + AJO',icon:'&#127912;',title:'Bundle offer optimized',
+      description:'Content Agent ranks bundles: Laptop case + USB-C dock at 15% bundle discount selected. Predicted conversion: 34% (vs 12% for no-bundle). Creative: on-site overlay with product images.',
+      aepData:{offer:'15% bundle: case ($79) + dock ($149) = $193.80',originalTotal:'$228.00',saving:'$34.20',predictedConversion:'34%',creative:'on-site-overlay-bundle-v1'}},
+     {agent:'channel',aepModule:'Destinations + Activation',icon:'&#128232;',title:'Real-time web activation',
+      description:'Channel Optimizer triggers immediate web overlay (user is on-site). Email follow-up scheduled at +2h if overlay dismissed. Push notification at +24h as final touchpoint.',
+      aepData:{primaryChannel:'web-overlay (immediate)',fallback1:'email at +2h',fallback2:'push at +24h',webOverlayPlacement:'bottom-right slide-in',deliveredAt:'now (real-time)'}},
+   ]},
+  {id:'onboard',label:'&#128640; New user onboarding',
+   profile:{name:'James Wilson',id:'USR-9021',tier:'New member',ltv:'Unknown (projected Medium)',churnRisk:'Low',lastActive:'Just signed up'},
+   steps:[
+     {agent:'behavioral',aepModule:'Edge Network',icon:'&#128225;',title:'Signup event captured',
+      description:'Edge Network captures signup completion event. First-session data: referred from Google Ads campaign, viewed 5 pages pre-signup, time to signup 3m 48s. New user flag raised.',
+      aepData:{event:'user.signup',source:'google-ads-q1',pagesPreSignup:5,timeToSignup:'3m 48s',device:'mobile-iOS',referrer:'google.com/ads'}},
+     {agent:'journey',aepModule:'Journey Optimizer',icon:'&#128640;',title:'Onboarding canvas entered',
+      description:'Journey Orchestrator enrolls James in the 7-day onboarding journey. Step 1: welcome message. Success criteria: complete profile + first core action within 48h.',
+      aepData:{journeyId:'onboarding-standard-v6',step:'0 of 7',successCriteria:'profile-complete + first-action',deadline:'48h',projectedCompletion:'72%'}},
+     {agent:'content',aepModule:'Offer Decisioning + AJO',icon:'&#127912;',title:'Welcome experience composed',
+      description:'Content Agent selects welcome email variant B (highest onboarding completion rate for mobile-first users at 68%). Includes interactive product tour link and $10 first-purchase credit.',
+      aepData:{creative:'welcome-mobile-v2-B',predictedCompletionRate:'68%',offer:'$10 first-purchase credit',includes:'Interactive product tour link',tone:'warm-encouraging'}},
+     {agent:'channel',aepModule:'Destinations + Activation',icon:'&#128232;',title:'Welcome sequence launched',
+      description:'Channel Optimizer: email sent immediately (welcome). Push permission prompt scheduled at +24h (after user has seen value). In-app tooltip tour activates on next app open.',
+      aepData:{immediate:'welcome email sent',at24h:'push permission prompt',onNextOpen:'in-app tooltip tour',emailDelivered:'14:05:12 UTC',pushScheduled:'14:05:12 +24h'}},
+   ]},
+];
+
+/* ═══════════════════════════════════════════
+   NODE POSITIONS
+   ═══════════════════════════════════════════ */
+const POS={
+  'src-web':{x:5,y:45},'src-crm':{x:5,y:195},'src-txn':{x:5,y:345},
+  behavioral:{x:120,y:20},intent:{x:120,y:190},segment:{x:120,y:355},
+  hub:{x:300,y:180},
+  journey:{x:300,y:10},content:{x:300,y:370},channel:{x:470,y:190},
+  aon:{x:460,y:370},
+  'ch-email':{x:565,y:10},'ch-push':{x:565,y:80},'ch-web':{x:565,y:150},
+  'ch-paid':{x:565,y:220},'ch-sms':{x:565,y:290},'ch-app':{x:565,y:360},
+};
+
+/* ═══════════════════════════════════════════
+   BUILD DOM
+   ═══════════════════════════════════════════ */
+function buildNodes(){
+  const w=document.getElementById('dscroll');
+  SOURCES.forEach(s=>{const p=POS[s.id];const d=document.createElement('div');d.className='nd signal-nd';d.id=s.id;d.style.cssText=`left:${p.x}px;top:${p.y}px`;d.innerHTML=`<div class="si">${s.icon}</div>${s.label}`;w.appendChild(d)});
+  AGENTS.forEach(a=>{const p=POS[a.id];const d=document.createElement('div');d.className='nd agent-nd';d.id='nd-'+a.id;d.style.cssText=`left:${p.x}px;top:${p.y}px;--node-c:${a.color}`;
+    d.innerHTML=`<div class="an-top"><div class="an-dot" style="background:${a.color}"></div><div class="an-nm">${a.name}</div></div><div class="an-aep">AEP: ${a.aep}</div><div class="an-desc">${a.desc}</div><div class="an-tags"><span class="an-tag tag-i">${a.inTag}</span><span class="an-tag tag-o">${a.outTag}</span></div><div class="an-cnt" id="cnt-${a.id}">0</div>`;w.appendChild(d)});
+  // Hub
+  const hp=POS.hub;const hd=document.createElement('div');hd.className='nd hub-nd';hd.id='nd-hub';hd.style.cssText=`left:${hp.x}px;top:${hp.y}px`;
+  hd.innerHTML=`<div class="hub-t">AEP orchestration hub</div><div class="hub-s">Merge · Resolve · Assemble · Throttle</div><div class="hub-steps"><div class="hub-st" id="hs-merge">Merge</div><div class="hub-st" id="hs-resolve">Resolve</div><div class="hub-st" id="hs-build">Build</div><div class="hub-st" id="hs-gate">Gate</div></div>`;w.appendChild(hd);
+  // AON
+  const ap=POS.aon;const ad=document.createElement('div');ad.className='nd aon-nd';ad.id='nd-aon';ad.style.cssText=`left:${ap.x}px;top:${ap.y}px`;
+  ad.innerHTML=`<div class="aon-t">Always-on layer</div><div class="aon-s">Voyager AI continuous activation</div><div class="aon-metrics"><div class="aon-m"><div class="v" id="aon-lat">0ms</div><div class="l">Latency</div></div><div class="aon-m"><div class="v" id="aon-thr">0</div><div class="l">Events</div></div></div>`;w.appendChild(ad);
+  // Channels
+  CHANNELS.forEach(c=>{const p=POS[c.id];const d=document.createElement('div');d.className='nd ch-nd';d.id=c.id;d.style.cssText=`left:${p.x}px;top:${p.y}px`;d.innerHTML=`<div class="ci">${c.icon}</div>${c.label}`;w.appendChild(d)});
+}
+
+function buildArrows(){
+  const svg=document.getElementById('flow-svg');
+  const lines=[
+    ['src-web','behavioral',90,65,120,55],['src-crm','intent',90,215,120,225],['src-txn','segment',90,365,120,390],
+    ['behavioral','hub',270,55,300,220],['intent','hub',270,225,300,240],['segment','hub',270,390,300,260],
+    ['hub','journey',390,210,300,50],['hub','channel',480,240,470,220],['hub','content',390,260,300,405],
+    ['journey','hub',390,50,480,210,'curve-back'],
+    ['content','hub',390,405,480,260,'curve-back'],
+    ['channel','aon',570,230,530,400],
+    ['aon','ch-email',560,400,565,35],['aon','ch-push',560,400,565,105],['aon','ch-web',560,400,565,175],
+    ['aon','ch-paid',560,400,565,245],['aon','ch-sms',560,400,565,315],['aon','ch-app',600,410,600,385],
+  ];
+  lines.forEach(([from,to,x1,y1,x2,y2,type])=>{
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    let d;
+    if(type==='curve-back'){
+      const mx=Math.max(x1,x2)+30;
+      d=`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+    }else{
+      const cx1=x1+(x2-x1)*0.4,cy1=y1,cx2=x1+(x2-x1)*0.6,cy2=y2;
+      d=`M${x1},${y1} C${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`;
+    }
+    path.setAttribute('d',d);path.className.baseVal='fl';
+    path.id=`fl-${from}-${to}`;
+    path.setAttribute('marker-end','url(#ah)');
+    svg.appendChild(path);
+  });
+}
+
+function buildUCChips(){
+  document.getElementById('uc-row').innerHTML=USE_CASES.map(uc=>`<div class="uc-chip" id="chip-${uc.id}" onclick="playUC('${uc.id}')">${uc.label}</div>`).join('');
+}
+
+/* ═══════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════ */
+let mode='auto',autoTimer=null,playing=false,tab='agents';
+let agentCnt={};AGENTS.forEach(a=>agentCnt[a.id]=0);
+let totalEvents=0;
+
+/* ═══════════════════════════════════════════
+   NODE CONTROL
+   ═══════════════════════════════════════════ */
+function litNode(id,ms=800){const el=document.getElementById('nd-'+id)||document.getElementById(id);if(!el)return;el.classList.add('lit');setTimeout(()=>el.classList.remove('lit'),ms)}
+function litLine(from,to,ms=800){const el=document.getElementById(`fl-${from}-${to}`);if(!el)return;el.classList.add('lit');el.setAttribute('marker-end','url(#ah-lit)');setTimeout(()=>{el.classList.remove('lit');el.setAttribute('marker-end','url(#ah)')},ms)}
+function litHub(step){const el=document.getElementById('hs-'+step);if(!el)return;el.classList.add('lit');setTimeout(()=>el.classList.remove('lit'),600)}
+
+/* ═══════════════════════════════════════════
+   RIGHT PANEL RENDER
+   ═══════════════════════════════════════════ */
+function setTab(t){tab=t;document.getElementById('tab-agents').classList.toggle('on',t==='agents');document.getElementById('tab-aep').classList.toggle('on',t==='aep');renderPanel()}
+
+function renderPanel(){
+  const body=document.getElementById('dp-body');
+  if(!currentUC){body.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--tx4);font-size:12px">Select a use case or watch autonomous mode</div>';return}
+  if(tab==='agents')renderAgentTab(body);
+  else renderAEPTab(body);
+}
+
+let currentUC=null,stepStates=[],currentStep=-1,elapsedMs=0;
+
+function renderAgentTab(body){
+  if(!currentUC){body.innerHTML='';return}
+  // Profile card
+  const p=currentUC.profile;
+  let html=`<div style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:14px">
+    <div style="font-weight:700;font-size:12px;margin-bottom:6px">AEP unified profile — ${p.name}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px">
+      ${Object.entries(p).filter(([k])=>k!=='name').map(([k,v])=>`<div style="background:var(--bg);border-radius:5px;padding:4px 7px"><span style="color:var(--tx4)">${k}: </span><span style="font-weight:600">${v}</span></div>`).join('')}
+    </div>
+  </div>`;
+  // Steps
+  currentUC.steps.forEach((step,i)=>{
+    const st=stepStates[i]||'pending';
+    const ag=AGENTS.find(a=>a.id===step.agent);
+    const stColor=st==='done'?'var(--emerald)':st==='running'?'var(--amber)':'var(--tx4)';
+    html+=`<div class="step-row ${st}">
+      <div class="sr-icon ${st}" style="${st==='done'?'background:'+ag.dim:''}">${st==='running'?'&#9881;&#65039;':step.icon}</div>
+      <div class="sr-body">
+        <div class="sr-head">
+          <span class="sr-title">${step.title}</span>
+          <span class="sr-badge" style="background:${ag.dim};color:${ag.color}">${step.agent}</span>
+          ${st==='done'?`<span class="sr-aep">AEP: ${step.aepModule}</span>`:''}
+        </div>
+        <div class="sr-desc">${step.description}</div>
+        ${st==='done'?`<div class="sr-data">${Object.entries(step.aepData).map(([k,v])=>`<div><span class="k">${k}: </span>${String(v)}</div>`).join('')}</div>`:''}
+      </div>
+      <div class="sr-status ${st}">${st==='done'?'&#10003;':st==='running'?'...':'&#183;'}</div>
+    </div>`;
+  });
+  body.innerHTML=html;
+}
+
+function renderAEPTab(body){
+  if(!currentUC){body.innerHTML='';return}
+  const done=currentUC.steps.filter((_,i)=>stepStates[i]==='done');
+  if(!done.length){body.innerHTML='<div style="text-align:center;padding:40px 0;color:var(--tx4);font-size:12px">Agents running — data will appear when steps complete...</div>';return}
+  let html='';
+  done.forEach((step,i)=>{
+    const ag=AGENTS.find(a=>a.id===step.agent);
+    html+=`<div class="aep-block"><div class="aep-block-head"><div class="aep-block-dot" style="background:${ag.color}"></div><div class="aep-block-name" style="color:${ag.color}">${step.aepModule}</div></div>
+    <div class="aep-block-data">${Object.entries(step.aepData).map(([k,v])=>`<div><span class="ak" style="color:${ag.color}">${k}: </span>${String(v)}</div>`).join('')}</div></div>`;
+  });
+  body.innerHTML=html;
+}
+
+function buildStepProgress(count){
+  const el=document.getElementById('step-prog');
+  let h='';for(let i=0;i<count;i++){if(i>0)h+=`<div class="sp-line" id="spl-${i}"></div>`;h+=`<div class="sp-dot" id="spd-${i}"></div>`}
+  el.innerHTML=h;
+}
+function updateStepProgress(){
+  currentUC.steps.forEach((_,i)=>{
+    const dot=document.getElementById('spd-'+i);const line=document.getElementById('spl-'+i);
+    if(!dot)return;
+    const st=stepStates[i]||'pending';
+    dot.className='sp-dot'+(st==='done'?' done':st==='running'?' cur':'');
+    if(line)line.className='sp-line'+(st==='done'||st==='running'?' done':'');
+  });
+}
+
+/* ═══════════════════════════════════════════
+   PLAY USE CASE
+   ═══════════════════════════════════════════ */
+async function playUC(ucId){
+  if(playing)return;
+  playing=true;
+  stopAuto();
+  currentUC=USE_CASES.find(u=>u.id===ucId);
+  stepStates=currentUC.steps.map(()=>'pending');
+  currentStep=-1;elapsedMs=0;
+  document.querySelectorAll('.uc-chip').forEach(c=>c.classList.remove('on'));
+  document.getElementById('chip-'+ucId).classList.add('on');
+  buildStepProgress(currentUC.steps.length);
+  renderPanel();
+
+  const start=Date.now();
+  const tmr=setInterval(()=>{elapsedMs=Date.now()-start;document.getElementById('timer').textContent=elapsedMs+'ms'},50);
+
+  for(let i=0;i<currentUC.steps.length;i++){
+    currentStep=i;
+    stepStates[i]='running';
+    updateStepProgress();renderPanel();
+
+    const step=currentUC.steps[i];
+    const ag=AGENTS.find(a=>a.id===step.agent);
+    // Fire signal sources for first agent
+    if(i===0){SOURCES.forEach(s=>{litNode(s.id,600);litLine(s.id,['behavioral','intent','segment'].includes(step.agent)?step.agent:'behavioral',600)})}
+    // Fire the agent node
+    litNode('nd-'+step.agent,1500);
+    agentCnt[step.agent]++;document.getElementById('cnt-'+step.agent).textContent=agentCnt[step.agent];
+    // Fire arrows to/from hub
+    if(['behavioral','intent','segment'].includes(step.agent)){
+      litLine(step.agent,'hub',800);
+      setTimeout(()=>{litNode('nd-hub',600);['merge','resolve','build','gate'].forEach((s,j)=>setTimeout(()=>litHub(s),j*120))},400);
+    }else{
+      litLine('hub',step.agent,800);
+      setTimeout(()=>{litNode('nd-hub',600);['merge','resolve','build','gate'].forEach((s,j)=>setTimeout(()=>litHub(s),j*120))},200);
+    }
+    // If channel agent, also fire AON + channels
+    if(step.agent==='channel'){
+      setTimeout(()=>{
+        litLine('channel','aon',800);litNode('nd-aon',1000);
+        totalEvents++;document.getElementById('aon-lat').textContent=Math.round(38+Math.random()*56)+'ms';document.getElementById('aon-thr').textContent=totalEvents;
+        CHANNELS.forEach((c,ci)=>{setTimeout(()=>{litLine('aon',c.id,600);litNode(c.id,600)},ci*120)});
+      },600);
+    }
+
+    await sleep(1400);
+    stepStates[i]='done';
+    updateStepProgress();renderPanel();
+    await sleep(300);
+  }
+  clearInterval(tmr);elapsedMs=Date.now()-start;document.getElementById('timer').textContent=elapsedMs+'ms';
+  playing=false;
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+
+/* ═══════════════════════════════════════════
+   AUTONOMOUS MODE
+   ═══════════════════════════════════════════ */
+function autoTick(){
+  // Pick a random UC and play a compressed version
+  const uc=USE_CASES[Math.floor(Math.random()*USE_CASES.length)];
+  currentUC=uc;
+  stepStates=uc.steps.map(()=>'pending');
+  buildStepProgress(uc.steps.length);
+  renderPanel();
+
+  let delay=0;
+  uc.steps.forEach((step,i)=>{
+    setTimeout(()=>{
+      stepStates[i]='running';updateStepProgress();renderPanel();
+      const ag=AGENTS.find(a=>a.id===step.agent);
+      litNode('nd-'+step.agent,900);
+      agentCnt[step.agent]++;document.getElementById('cnt-'+step.agent).textContent=agentCnt[step.agent];
+      if(['behavioral','intent','segment'].includes(step.agent)){
+        const src=SOURCES[Math.floor(Math.random()*SOURCES.length)];
+        litNode(src.id,500);litLine(src.id,step.agent,600);
+        setTimeout(()=>litLine(step.agent,'hub',600),300);
+        setTimeout(()=>{litNode('nd-hub',500);['merge','resolve','build','gate'].forEach((s,j)=>setTimeout(()=>litHub(s),j*100))},500);
+      }else{
+        litLine('hub',step.agent,600);
+        setTimeout(()=>{litNode('nd-hub',500);['merge','resolve'].forEach((s,j)=>setTimeout(()=>litHub(s),j*100))},200);
+      }
+      if(step.agent==='channel'){
+        setTimeout(()=>{
+          litLine('channel','aon',700);litNode('nd-aon',800);
+          totalEvents++;document.getElementById('aon-lat').textContent=Math.round(38+Math.random()*56)+'ms';document.getElementById('aon-thr').textContent=totalEvents;
+          const chs=CHANNELS.filter(()=>Math.random()>.4);
+          chs.forEach((c,ci)=>setTimeout(()=>{litLine('aon',c.id,500);litNode(c.id,500)},ci*100));
+        },500);
+      }
+      setTimeout(()=>{stepStates[i]='done';updateStepProgress();renderPanel()},700);
+    },delay);
+    delay+=800;
+  });
+  document.getElementById('timer').textContent=Math.round(delay*0.8)+'ms';
+}
+
+function startAuto(){stopAuto();autoTick();autoTimer=setInterval(autoTick,5000)}
+function stopAuto(){if(autoTimer){clearInterval(autoTimer);autoTimer=null}}
+
+/* ═══════════════════════════════════════════
+   MODE
+   ═══════════════════════════════════════════ */
+function setMode(m){
+  mode=m;
+  document.getElementById('btn-auto').classList.toggle('on',m==='auto');
+  document.getElementById('btn-uc').classList.toggle('on',m==='uc');
+  document.getElementById('ucb').classList.toggle('show',m==='uc');
+  if(m==='auto'){document.querySelectorAll('.uc-chip').forEach(c=>c.classList.remove('on'));startAuto()}
+  else{stopAuto();currentUC=null;stepStates=[];document.getElementById('step-prog').innerHTML='';renderPanel()}
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════ */
+buildNodes();buildArrows();buildUCChips();renderPanel();startAuto();
+</script>
+</body>
+</html>
