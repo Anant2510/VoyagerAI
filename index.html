@@ -59,28 +59,28 @@ const mono="'JetBrains Mono','Fira Code',monospace";
 /* ═══ PIPELINE STAGES (from VoyagerAI single-pager) ═══════════ */
 const PIPELINE=[
   {id:"ingest",agent:"Data Ingestion Agent",label:"Data Ingestion\nAgent",icon:"📡",color:X.cyan,bg:X.cyanB,
-   diff:"Prebuilt PSS Connectors and API's",kpi:"Single Customer 360 View",
-   desc:"Ingest real-time data from PSS (Amadeus, SHARES), loyalty engines, web analytics, app telemetry, and third-party sources via prebuilt connectors — no custom integration required."},
+   diff:"Prebuilt PSS Connectors and APIs",kpi:"Single Customer 360 View",
+   desc:"Ingest real-time data from PSS (Amadeus, SABRE), loyalty engines, web analytics, app telemetry, and third-party sources via prebuilt connectors — no custom integration required."},
   {id:"model",agent:"Data Modelling Agent",label:"Data Modelling\nAgent",icon:"🧬",color:X.purple,bg:X.purpleB,
-   diff:"Prebuilt Airline Schemas Enhanced with AI",kpi:"60% Less Time for Data Modeling",
+   diff:"Prebuilt Airline Schemas Enhanced with AI",kpi:"60% Less Modeling Time",
    desc:"Normalize raw signals into airline-specific schemas. AI enriches fields like disruption severity, competitor intent scores, and loyalty tier context — 60% faster than manual modeling."},
   {id:"identity",agent:"Identity Stitching Agent",label:"Identity Stitching\nAgent",icon:"🔗",color:X.blue,bg:X.blueB,
-   diff:"Single Customer 360 View",kpi:"Single Customer 360 View",
+   diff:"Cross-Channel Identity Resolution",kpi:"Single Customer 360 View",
    desc:"Resolve passenger identity across PNRs, loyalty IDs, device fingerprints, hashed emails, and cookies. Build a single unified profile — the foundation for true 1:1 personalisation."},
   {id:"predict",agent:"Predictive Propensity Agent",label:"Predictive Propensity\nAgent",icon:"🧠",color:X.amber,bg:X.amberB,
    diff:"Predictive AI for Conversion & Churn",kpi:"40% More Accurate Targeting",
    desc:"Score conversion, churn, and upsell propensity in real time. AI models trained on airline-specific signals deliver 40% more accurate targeting than rule-based segmentation."},
   {id:"personalize",agent:"1:1 Personalization Agent",label:"1:1 Personalization\nAgent",icon:"🎯",color:X.coral,bg:X.coralL,
-   diff:"Pre-Built Micro-Segments",kpi:"50% Faster Personalization Rollout",
+   diff:"Pre-Built Micro-Segments",kpi:"50% Faster Personalization",
    desc:"Match passengers to pre-built micro-segments and compose bespoke offers calibrated to their lifetime value, route preferences, and behavioral context — 50% faster than manual segmentation."},
   {id:"content",agent:"Content Generation Agent",label:"Content Generation\nAgent",icon:"✨",color:X.pink,bg:X.pinkB,
-   diff:"AI for Content Creation",kpi:"60% Faster Content Variation Generation",
+   diff:"AI for Content Creation",kpi:"60% Faster Content Ops",
    desc:"Generate channel-specific creatives — emails, push notifications, SMS, and in-app banners — personalized to each passenger. 60% faster content variation including A/B test variants."},
-  {id:"activate",agent:"Activation Agent",label:"Omnichannel Activation\nAgent",icon:"🚀",color:X.green,bg:X.greenB,
-   diff:"100% Channel Coverage",kpi:"50% Reduction in Operations",
+  {id:"activate",agent:"Omnichannel Activation Agent",label:"Omnichannel Activation\nAgent",icon:"🚀",color:X.green,bg:X.greenB,
+   diff:"100% Channel Coverage",kpi:"50% Ops Reduction",
    desc:"Activate across website, applications, notifications, SMS, email, social media, and offline channels with intelligent sequencing and fatigue suppression — 100% channel coverage."},
-  {id:"optimize",agent:"Feedback Agent",label:"Continuous Feedback\nAgent",icon:"📊",color:X.orange,bg:X.orangeB,
-   diff:"Advanced Insights & AI Driven Optimization",kpi:"Faster Customer Feedback Loop",
+  {id:"optimize",agent:"Continuous Feedback Agent",label:"Continuous Feedback\nAgent",icon:"📊",color:X.orange,bg:X.orangeB,
+   diff:"Advanced Insights & AI Driven Optimization",kpi:"Faster Feedback Loop",
    desc:"Track engagement, conversion, and revenue impact in real time. AI auto-selects winning variants. If no engagement, escalation triggers fire enhanced follow-up journeys automatically."},
 ];
 
@@ -208,7 +208,7 @@ function ArchitectureDiagram({activeStage,onStageClick}){
         const active=activeStage===p.id;
         return <g key={`diff-${i}`}>
           <line x1={x+nodeW/2} y1={y+nodeH} x2={x+nodeW/2} y2={y+nodeH+18} stroke={active?p.color:X.bdr} strokeWidth="1" strokeDasharray={active?"":"3 3"}/>
-          <text x={x+nodeW/2} y={y+nodeH+30} textAnchor="middle" fontSize="7" fontWeight="600"
+          <text x={x+nodeW/2} y={y+nodeH+30} textAnchor="middle" fontSize="6" fontWeight="600"
             fill={active?p.color:X.t3} fontFamily="Inter,sans-serif">
             {p.kpi}
           </text>
