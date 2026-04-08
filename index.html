@@ -295,16 +295,8 @@ function App(){
   const total=uc?uc.steps.length:8;
 
   return(
-    <div style={{display:"flex",minHeight:"100vh",background:X.bg}}>
+    <div style={{minHeight:"100vh",background:X.bg}}>
 
-      {/* ═══ SIDEBAR ════════════════════════════════════ */}
-      <aside style={{width:56,background:X.card,borderRight:`1px solid ${X.bdr}`,padding:"16px 8px",display:"flex",flexDirection:"column",alignItems:"center",position:"sticky",top:0,height:"100vh",zIndex:101,boxShadow:"1px 0 3px rgba(0,0,0,.03)"}}>
-        {[["🏠",false],["📦",true],["📊",false],["⚙️",false]].map(([ic,act],i)=>(
-          <div key={i} style={{width:40,height:40,borderRadius:10,marginBottom:8,background:act?X.coralL:"transparent",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,cursor:"pointer",border:act?`1px solid ${X.coralB}`:"1px solid transparent"}}>{ic}</div>
-        ))}
-      </aside>
-
-      <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
 
         {/* ═══ HEADER ═══════════════════════════════════ */}
         <header style={{background:"#ffffff",borderBottom:`1px solid ${X.bdr}`,padding:"0 32px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between",position:"sticky",top:0,zIndex:100,boxShadow:"0 1px 3px rgba(0,0,0,.05)"}}>
@@ -312,10 +304,6 @@ function App(){
             <img src="data:image/png;base64,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" alt="Xperion" style={{width:87,height:27,display:"block",flexShrink:0}}/>
             <div style={{width:1,height:18,background:"#d8dde6"}}></div>
             <span style={{fontSize:14,fontWeight:500,color:"#173052",letterSpacing:"-0.1px",lineHeight:1}}>VoyagerAI</span>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:"#64748b",background:"#f8fafc",padding:"5px 12px",borderRadius:16,border:"1px solid #e2e8f0"}}>
-            <div style={{width:7,height:7,borderRadius:"50%",background:"#16a34a",boxShadow:"0 0 6px rgba(22,163,74,0.45)"}}></div>
-            <span>Ready</span>
           </div>
         </header>
 
@@ -331,7 +319,7 @@ function App(){
             <h1 style={{fontSize:30,fontWeight:800,color:"#ffffff",lineHeight:1.2,marginBottom:16,letterSpacing:"-0.5px"}}>AI-Powered Engine for Airlines to<br/>Drive Real-Time Personalisation</h1>
             <p style={{fontSize:13,color:"rgba(255,255,255,0.84)",lineHeight:1.7,marginBottom:24,maxWidth:540}}>VoyagerAI is a pre-built airline accelerator within the Xperion marketplace. It unifies traveler data, predicts intent, and activates next-best journeys across disruption recovery, loyalty engagement, ancillary upsell, and retention use cases.</p>
             <div style={{display:"flex",gap:12,alignItems:"center"}}>
-              <a href="#demo" style={{background:"#ffffff",color:"#082340",border:"none",padding:"12px 28px",borderRadius:8,fontSize:14,fontWeight:700,textDecoration:"none",display:"inline-block",letterSpacing:"-0.2px",transition:"all 0.2s"}}>Try Live Demo →</a>
+              <a href="#demo" style={{background:"#ffffff",color:"#082340",border:"none",padding:"12px 28px",borderRadius:8,fontSize:14,fontWeight:700,textDecoration:"none",display:"inline-block",letterSpacing:"-0.2px",transition:"all 0.2s"}} onMouseEnter={e=>e.currentTarget.style.background="#D4552F"} onMouseLeave={e=>e.currentTarget.style.background="#ffffff"}>Try Live Demo →</a>
               <a href="#architecture" style={{background:"rgba(255,255,255,0.1)",color:"#ffffff",border:"1px solid rgba(255,255,255,0.3)",padding:"12px 22px",borderRadius:8,fontSize:14,fontWeight:600,textDecoration:"none",display:"inline-block"}}>View Architecture ↓</a>
             </div>
           </div>
@@ -443,9 +431,7 @@ function App(){
                     <Badge text={`Hub: ${u.passenger.hub}`} color={X.t2}/>
                     <Badge text={`LTV: ${u.passenger.ltv}`} color={X.green} bg={X.greenB}/>
                   </div>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"11px 20px",borderRadius:10,border:`1px solid ${X.bdr}`,background:X.surf,fontWeight:600,fontSize:13,color:X.t2}}>
-                    Launch Demo →
-                  </div>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"11px 20px",borderRadius:10,border:"none",background:"#D4552F",fontWeight:700,fontSize:13,color:"#fff",transition:"background .2s"}} onMouseEnter={e=>e.currentTarget.style.background="#B94728"} onMouseLeave={e=>e.currentTarget.style.background="#D4552F"}>Launch Demo →</div>
                 </div>
               ))}
             </div>
@@ -656,7 +642,6 @@ function App(){
           <span style={{margin:"0 8px",color:X.bdr}}>·</span>AI-Powered Engine for Airlines · Real-Time Personalisation at Scale
           <span style={{margin:"0 8px",color:X.bdr}}>·</span>© {new Date().getFullYear()} Coforge
         </footer>
-      </div>
     </div>
   );
 }
