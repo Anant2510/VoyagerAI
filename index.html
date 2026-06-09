@@ -98,14 +98,38 @@ const USE_CASES=[
     offer:{ headline:"Elena, your loyalty means the world to us.", action:"First Class upgrade SIN → LHR", miles:"30,000 bonus miles", credit:"$500 travel credit", lounge:"Flagship First + Arrivals Lounge LHR" },
     result:{ before:"81%", after:"19%", metric:"churn risk" },
     steps:[
-      {t:"Multi-source signals captured",d:{sources:"PSS + Web + Loyalty + App",signals:4,latency:"210ms"}},
-      {t:"Airline schemas enrich 18 fields",d:{schema:"pax_360_v4",competitorIntent:"0.85",uninstallRisk:"elevated"}},
-      {t:"6 identity fragments → unified profile",d:{confidence:"99.6%",graph:"PNR↔Loyalty↔Device↔Email↔Cookie↔App"}},
-      {t:"Churn propensity scored at 81%",d:{probability:"81%",drivers:"disruptions 38% · competitor 28% · redemption 19%",action:"RETAIN CRITICAL"}},
-      {t:"Micro-segment: platinum-at-risk-premium-ltv",d:{offer:"upgrade + miles + credit",personalization:"97%",match:"1:1"}},
-      {t:"4 channel creatives generated in 2.1s",d:{variants:4,tone:"premium-appreciative",abTest:"2 subjects"}},
-      {t:"100% channel coverage — sequenced delivery",d:{push:"✓ immediate",email:"✓ +3min",sms:"✓ +8min",banner:"✓ next open"}},
-      {t:"Feedback loop armed — 9 metrics tracked",d:{escalation:"18h → enhanced offer",optimization:"AI auto A/B",loop:"ARMED ✓"}},
+      {t:"Multi-source signals captured",
+       uses:"PSS / Amadeus disruption log · Emirates fare-page web events · loyalty redemption history · app session telemetry",
+       action:"Pulled 4 live signals from 4 source systems onto the event bus via prebuilt connectors",
+       d:{sources:"PSS · Web · Loyalty · App",signals:4,latency:"210ms"}},
+      {t:"Raw signals normalized & enriched",
+       uses:"Raw event payloads from the ingestion bus",
+       action:"Normalized into the pax_360_v4 schema and AI-enriched 18 fields incl. competitor-intent & uninstall-risk",
+       d:{schema:"pax_360_v4",fieldsEnriched:18,competitorIntent:"0.85",uninstallRisk:"elevated"}},
+      {t:"6 identity fragments → one profile",
+       uses:"PNR · loyalty ID · device fingerprint · hashed email · cookie · app ID",
+       action:"Resolved all 6 fragments to a single passenger and built the unified 360 profile",
+       d:{confidence:"99.6%",fragments:6,graph:"PNR↔Loyalty↔Device↔Email↔Cookie↔App"}},
+      {t:"Churn propensity scored",
+       uses:"Unified profile + 28-day behavioral history",
+       action:"Scored churn propensity at 81% and flagged the account RETAIN CRITICAL",
+       d:{churnProbability:"81%",drivers:"disruptions 38% · competitor 28% · redemption 19%",decision:"RETAIN CRITICAL"}},
+      {t:"Matched to micro-segment & offer composed",
+       uses:"Churn score · $52,400 LTV · route preferences · loyalty tier",
+       action:"Matched to micro-segment 'platinum-at-risk-premium-ltv' and composed a 1:1 retention offer",
+       d:{segment:"platinum-at-risk-premium-ltv",offer:"upgrade + miles + credit",personalization:"97%",match:"1:1"}},
+      {t:"Channel creatives generated",
+       uses:"Selected offer + premium-appreciative tone profile",
+       action:"Generated 4 channel creatives and 2 A/B subject lines in 2.1s",
+       d:{variants:4,channels:"push · email · sms · banner",tone:"premium-appreciative",abTest:"2 subjects"}},
+      {t:"Sequenced delivery — 100% coverage",
+       uses:"4 creatives + per-channel fatigue & frequency rules",
+       action:"Activated all 4 channels with intelligent sequencing and fatigue suppression",
+       d:{push:"✓ immediate",email:"✓ +3min",sms:"✓ +8min",banner:"✓ next open"}},
+      {t:"Feedback loop armed",
+       uses:"Live engagement, conversion & revenue events",
+       action:"Armed the loop tracking 9 metrics, with 18h escalation to an enhanced offer if no engagement",
+       d:{metricsTracked:9,escalation:"18h → enhanced offer",optimization:"AI auto A/B",loop:"ARMED ✓"}},
     ],
   },
   {
@@ -120,14 +144,84 @@ const USE_CASES=[
     offer:{ headline:"James, we've already found you a great alternative.", action:"Rebooked BA 219 LHR→JFK — Business Class", miles:"10,000 apology miles", credit:"£100 travel voucher", lounge:"Galleries First Lounge access" },
     result:{ before:"45%", after:"12%", metric:"churn risk" },
     steps:[
-      {t:"Cancellation event captured from OpsCenter",d:{event:"flight.cancelled",flight:"BA 217",passengers:186,latency:"148ms"}},
-      {t:"IROPS codes mapped to severity schema",d:{severity:"HIGH",reason:"mechanical",fieldsEnriched:12}},
-      {t:"James + companion → unified travel group",d:{confidence:"99.8%",companions:1,group:"family-travel-pair"}},
-      {t:"Disruption sensitivity scored — rebooking priority HIGH",d:{sensitivityScore:"72%",priority:"HIGH",window:"immediate"}},
-      {t:"Best alternative pre-selected: BA 219 Business",d:{flight:"BA 219 @ 16:40",reason:"2 seats + aisle pref match",confidence:"96%"}},
-      {t:"Push notification + rebooking card generated",d:{variants:3,tone:"proactive-empathetic",cta:"one-tap confirm"}},
-      {t:"Push delivered immediately — email backup +2min",d:{push:"✓ immediate",email:"✓ +2min",sms:"✓ +5min"}},
-      {t:"Feedback loop: booking confirmed → satisfaction survey queued",d:{metricsTracked:6,npsScheduled:"+24h",loop:"ARMED ✓"}},
+      {t:"Cancellation event captured",
+       uses:"OpsCenter cancellation feed · PSS passenger manifest · loyalty profile",
+       action:"Captured the BA 217 cancellation and 186-passenger manifest onto the event bus",
+       d:{event:"flight.cancelled",flight:"BA 217",passengers:186,latency:"148ms"}},
+      {t:"IROPS codes mapped to severity",
+       uses:"Raw IROPS reason codes from OpsCenter",
+       action:"Mapped codes to a HIGH-severity schema and enriched 12 fields",
+       d:{severity:"HIGH",reason:"mechanical",fieldsEnriched:12}},
+      {t:"Traveler group resolved",
+       uses:"James's PNR + linked companion PNR",
+       action:"Linked James and his companion into a single travel group",
+       d:{confidence:"99.8%",companions:1,group:"family-travel-pair"}},
+      {t:"Disruption sensitivity scored",
+       uses:"Unified group profile + prior disruption history",
+       action:"Scored disruption sensitivity 72% and set rebooking priority HIGH",
+       d:{sensitivityScore:"72%",priority:"HIGH",window:"immediate"}},
+      {t:"Best alternative pre-selected",
+       uses:"Seat preferences · cabin class · live seat inventory",
+       action:"Pre-selected BA 219 Business — 2 adjacent seats with aisle-preference match",
+       d:{flight:"BA 219 @ 16:40",reason:"2 seats + aisle pref match",confidence:"96%"}},
+      {t:"Rebooking card generated",
+       uses:"Rebooking details + proactive-empathetic tone profile",
+       action:"Generated a one-tap rebooking card and 3 message variants",
+       d:{variants:3,channels:"push · email · sms",tone:"proactive-empathetic",cta:"one-tap confirm"}},
+      {t:"Delivered immediately + backups",
+       uses:"Rebooking card + delivery & fallback rules",
+       action:"Pushed to the app immediately with email and SMS as backups",
+       d:{push:"✓ immediate",email:"✓ +2min",sms:"✓ +5min"}},
+      {t:"Feedback loop armed",
+       uses:"Booking confirmation + post-trip signals",
+       action:"Confirmed the rebooking, queued a +24h satisfaction survey, and armed the loop (6 metrics)",
+       d:{metricsTracked:6,npsScheduled:"+24h",loop:"ARMED ✓"}},
+    ],
+  },
+  {
+    id:"airport",
+    title:"Airport Disruption — Mass Re-Accommodation",
+    subtitle:"Proactive overnight care for a mid-tier flyer during a hub-wide ground stop",
+    icon:"🌨️",
+    color:X.blue,
+    bg:X.blueB,
+    passenger:{ name:"Daniel Brooks", tier:"Silver Member", hub:"ORD", ltv:"$9,800", churnRisk:38, miles:31500, flightsYTD:12, disruptions:1, competitor:"N/A", segments:["silver-member","mid-tier-frequent","disruption-active","price-sensitive"] },
+    trigger:{ title:"Airport Ground Stop — ORD Winter Storm", signals:[ {s:"OpsCenter",e:"FAA ground stop issued at ORD — winter storm",sev:"critical"}, {s:"Weather Feed",e:"6–9 in. snow · ramp closed until 22:00",sev:"high"}, {s:"PSS / Amadeus",e:"AA 1492 ORD→AUS delayed 4h+ · connection at risk",sev:"high"}, {s:"Loyalty Engine",e:"Silver member · solo · no overnight booked",sev:"medium"} ]},
+    offer:{ headline:"Daniel, we've sorted tonight and your new flight.", action:"Rebooked AA 1502 ORD→AUS — 07:10 tomorrow", miles:"5,000 goodwill miles", credit:"Hotel covered + $40 meal voucher", lounge:"Admirals Club access tonight" },
+    result:{ before:"38%", after:"11%", metric:"churn risk" },
+    steps:[
+      {t:"Airport ground-stop event captured",
+       uses:"OpsCenter ground-stop feed · FAA NAS status · weather feed · PSS connection manifest",
+       action:"Ingested the hub-wide ground stop and Daniel's at-risk itinerary onto the event bus",
+       d:{event:"airport.groundstop",airport:"ORD",paxImpacted:2840,latency:"172ms"}},
+      {t:"Mapped to overnight-impact schema",
+       uses:"Ground-stop duration · flight schedules · connection windows",
+       action:"Modeled Daniel as 'missed-connection / overnight-required' and enriched 14 fields",
+       d:{severity:"HIGH",impact:"overnight-required",missedConnection:"AA 1492 → AA 880",fieldsEnriched:14}},
+      {t:"Profile resolved across 4 fragments",
+       uses:"PNR · loyalty ID · app device ID · hashed email",
+       action:"Resolved fragments to a single solo-traveler profile",
+       d:{confidence:"99.4%",fragments:4,group:"solo-traveler"}},
+      {t:"Mid-tier disruption-churn risk scored",
+       uses:"Unified profile · $9,800 LTV · price-sensitivity · disruption history",
+       action:"Scored disruption-churn risk 38% and flagged PROTECT MID-TIER VALUE",
+       d:{churnRisk:"38%",drivers:"overnight 44% · price-sensitivity 31% · solo 14%",decision:"PROTECT MID-TIER"}},
+      {t:"Matched to mid-tier care segment",
+       uses:"Risk score · fare class · live hotel & seat inventory · cost guardrails",
+       action:"Matched to 'silver-overnight-care' and composed hotel + meal + morning rebooking within policy cost guardrails",
+       d:{segment:"silver-overnight-care",offer:"rebook + hotel + meal + miles",personalization:"94%",costGuardrail:"within policy"}},
+      {t:"Re-accommodation pack generated",
+       uses:"Rebooking + hotel details · reassuring-clear tone profile",
+       action:"Generated an overnight-care card and 3 message variants in 2.4s",
+       d:{variants:3,channels:"push · sms · email",tone:"reassuring-clear",cta:"one-tap accept"}},
+      {t:"Delivered before the gate announcement",
+       uses:"Care-pack creatives · real-time location · fatigue rules",
+       action:"Pushed to app + SMS immediately, with the hotel voucher emailed as backup",
+       d:{push:"✓ immediate",sms:"✓ +1min",email:"✓ +3min (voucher)",coverage:"100%"}},
+      {t:"Feedback loop armed to resolution",
+       uses:"Acceptance · hotel check-in · rebooking & NPS events",
+       action:"Confirmed acceptance, queued a post-arrival NPS survey, and armed the loop (7 metrics) with 2h agent-callback escalation",
+       d:{metricsTracked:7,npsScheduled:"post-arrival",escalation:"2h → agent callback",loop:"ARMED ✓"}},
     ],
   },
 ];
@@ -226,26 +320,54 @@ function ArchitectureDiagram({activeStage,onStageClick}){
 }
 
 /* ═══ AGENT ROW (in demo) ═════════════════════════════════════ */
-function AgentRow({step,pipeline,state}){
+function AgentRow({step,pipeline,index,state}){
   const p=pipeline;
-  const sc=state==="done"?X.green:state==="running"?X.amber:X.t3;
+  const running=state==="running",done=state==="done",pending=!running&&!done;
+  const statusLabel=running?"RUNNING":done?"DONE":"QUEUED";
+  const statusColor=running?X.amber:done?X.green:X.t3;
   return(
-    <div style={{display:"flex",gap:12,padding:"13px 0",borderBottom:`1px solid ${X.bdrL}`,opacity:state==="pending"?.22:1,transition:"opacity .4s"}}>
-      <div style={{width:36,height:36,borderRadius:10,flexShrink:0,marginTop:2,
-        background:state==="done"?p.bg:state==="running"?X.amberB:X.surf,
-        display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,
-        border:state==="running"?`2px solid ${X.amber}`:`1px solid ${X.bdr}`,
-        animation:state==="running"?"pulse 1.5s infinite":"none"}}>
-        {state==="running"?<span style={{animation:"spin 1s linear infinite",display:"inline-block"}}>⚙️</span>:p.icon}
-      </div>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:3,flexWrap:"wrap"}}>
-          <span style={{fontWeight:700,fontSize:12.5,color:X.t1}}>{step.t}</span>
-          <Badge text={p.agent} color={sc}/>
+    <div style={{display:"flex",gap:11,padding:"14px 0",borderBottom:`1px solid ${X.bdrL}`,opacity:pending?.4:1,transition:"opacity .4s"}}>
+      {/* Icon + step number */}
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:5,flexShrink:0,width:40}}>
+        <div style={{width:38,height:38,borderRadius:11,
+          background:done?p.bg:running?X.amberB:X.surf,
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,
+          border:running?`2px solid ${X.amber}`:`1.5px solid ${done?p.color:X.bdr}`,
+          animation:running?"pulse 1.5s infinite":"none"}}>
+          {running?<span style={{animation:"spin 1s linear infinite",display:"inline-block"}}>⚙️</span>:p.icon}
         </div>
-        {state==="done"&&<DataBlock entries={step.d} color={p.color}/>}
+        <div style={{fontSize:8.5,fontWeight:800,color:done?p.color:X.t3,fontFamily:mono}}>{index+1}/8</div>
       </div>
-      <div style={{flexShrink:0,fontSize:13,color:sc,fontWeight:800,marginTop:4}}>{state==="running"?"●":state==="done"?"✓":"·"}</div>
+
+      {/* Body */}
+      <div style={{flex:1,minWidth:0}}>
+        {/* Agent identity header */}
+        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:(running||done)?8:0,flexWrap:"wrap"}}>
+          <span style={{fontWeight:800,fontSize:12.5,color:done?p.color:X.t1}}>{p.agent}</span>
+          <span style={{fontSize:8.5,fontWeight:700,padding:"2px 7px",borderRadius:5,background:p.bg,color:p.color}}>{p.diff}</span>
+          <span style={{marginLeft:"auto",fontSize:9,fontWeight:800,color:statusColor,fontFamily:mono,letterSpacing:".04em"}}>{running?"● ":done?"✓ ":"· "}{statusLabel}</span>
+        </div>
+
+        {/* Data utilized + action taken — shown once the agent starts working */}
+        {(running||done)&&(
+          <div style={{display:"flex",flexDirection:"column",gap:7}}>
+            <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+              <span style={{fontSize:7.5,fontWeight:800,color:X.t2,background:X.surf,border:`1px solid ${X.bdr}`,padding:"3px 6px",borderRadius:5,letterSpacing:".05em",flexShrink:0,marginTop:1,width:84,textAlign:"center"}}>DATA USED</span>
+              <span style={{fontSize:11,color:X.t2,lineHeight:1.5}}>{step.uses}</span>
+            </div>
+            <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+              <span style={{fontSize:7.5,fontWeight:800,color:p.color,background:p.bg,border:`1px solid ${p.color}30`,padding:"3px 6px",borderRadius:5,letterSpacing:".05em",flexShrink:0,marginTop:1,width:84,textAlign:"center"}}>ACTION</span>
+              <span style={{fontSize:11,color:X.t1,fontWeight:600,lineHeight:1.5}}>{step.action}</span>
+            </div>
+            {done&&(
+              <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                <span style={{fontSize:7.5,fontWeight:800,color:X.t3,background:X.card,border:`1px solid ${X.bdr}`,padding:"3px 6px",borderRadius:5,letterSpacing:".05em",flexShrink:0,marginTop:1,width:84,textAlign:"center"}}>OUTPUT</span>
+                <div style={{flex:1,minWidth:0}}><DataBlock entries={step.d} color={p.color}/></div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -414,7 +536,7 @@ function App(){
           </div>
 
           {phase==="idle"?(
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
               {USE_CASES.map(u=>(
                 <div key={u.id} className="hover-lift" onClick={()=>runDemo(u.id)} style={{
                   background:X.card,borderRadius:16,padding:24,border:`1px solid ${X.bdr}`,boxShadow:X.sh,cursor:"pointer",
@@ -491,14 +613,15 @@ function App(){
 
                   {/* Agent execution log */}
                   <div className="fu" style={{animationDelay:".1s",background:X.card,border:`1px solid ${X.bdr}`,borderRadius:16,padding:18,boxShadow:X.sh}}>
-                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
                       <div style={{fontWeight:800,fontSize:13,color:X.t1}}>Agent Pipeline Execution</div>
                       <div style={{fontSize:10,fontFamily:mono,color:X.t3}}>{phase==="running"?`Step ${currentStep+1} of ${total}`:`Done · ${elapsed}ms`}</div>
                     </div>
+                    <div style={{fontSize:10,color:X.t3,marginBottom:10,lineHeight:1.4}}>Each of the 8 agents runs in order — showing the <strong style={{color:X.t2}}>data it used</strong> and the <strong style={{color:X.t2}}>action it took</strong>.</div>
                     <div style={{height:5,background:X.surf,borderRadius:3,marginBottom:14,overflow:"hidden",border:`1px solid ${X.bdr}`}}>
                       <div style={{height:"100%",width:`${(done/total)*100}%`,background:`linear-gradient(90deg,${X.coral},${X.green})`,borderRadius:3,transition:"width .4s"}}/>
                     </div>
-                    {uc.steps.map((step,i)=><AgentRow key={i} step={step} pipeline={PIPELINE[i]} state={stepStates[i]||"pending"}/>)}
+                    {uc.steps.map((step,i)=><AgentRow key={i} step={step} pipeline={PIPELINE[i]} index={i} state={stepStates[i]||"pending"}/>)}
                   </div>
                 </div>
 
@@ -608,10 +731,14 @@ function App(){
                       {uc.steps.map((step,i)=>(
                         <div key={i} style={{marginBottom:16,opacity:(stepStates[i]||"pending")==="done"?1:.15,transition:"opacity .4s"}}>
                           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
-                            <div style={{width:9,height:9,borderRadius:"50%",background:PIPELINE[i].color,boxShadow:`0 0 6px ${PIPELINE[i].color}40`}}/>
+                            <div style={{width:18,height:18,borderRadius:6,background:PIPELINE[i].bg,border:`1px solid ${PIPELINE[i].color}40`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:800,color:PIPELINE[i].color,fontFamily:mono}}>{i+1}</div>
                             <span style={{fontSize:12,fontWeight:700,color:X.t1}}>{PIPELINE[i].agent}</span>
                           </div>
-                          <DataBlock entries={step.d} color={PIPELINE[i].color}/>
+                          <div style={{paddingLeft:26,fontSize:10.5,color:X.t2,lineHeight:1.5,marginBottom:8}}>
+                            <div style={{marginBottom:3}}><span style={{fontWeight:700,color:X.t3}}>Data used → </span>{step.uses}</div>
+                            <div><span style={{fontWeight:700,color:PIPELINE[i].color}}>Action → </span><span style={{color:X.t1,fontWeight:600}}>{step.action}</span></div>
+                          </div>
+                          <div style={{paddingLeft:26}}><DataBlock entries={step.d} color={PIPELINE[i].color}/></div>
                         </div>
                       ))}
                       {done===total&&(
